@@ -128,3 +128,5 @@ jobs:
   # Add auto-publishing to AMO once web-ext supports submitting extensions from ZIP files
   # This also includes uploading source code and AMO release notes
   # See: https://github.com/mozilla/web-ext/issues/3242
+
+  
