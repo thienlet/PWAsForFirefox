@@ -4,6 +4,7 @@ export const PREF_SHOW_UPDATE_POPUP = 'settings.show-update-popup'
 export const PREF_ENABLE_AUTO_LAUNCH = 'settings.enable-auto-launch'
 export const PREF_DEFAULT_PROFILE_TEMPLATE = 'settings.default-profile-template'
 export const PREF_AUTO_LAUNCH_EXCLUSION = 'settings.auto-launch-exclusion'
+export const PREF_DEFAULT_TAB = 'settings.default-tab'
 export const PREF_LOCALE = 'settings.locale'
 export const PREF_DISABLE_UPDATE_CHECKING = 'settings.disable-update-checking'
 
@@ -173,13 +174,17 @@ export async function checkNativeStatus () {
  * Supported platforms:
  * - Windows: All (x86, x64, ARM64)
  * - MacOS: All (x64, ARM64)
- * - Linux: x86, x64
+ * - Linux: x86, x64, ARM64
  *
  * @returns {Promise<boolean>}
  */
 export async function isAutoRuntimeInstallSupported () {
   const { os, arch } = await browser.runtime.getPlatformInfo()
-  return os === 'win' || os === 'mac' || (os === 'linux' && (arch === 'x86-64' || arch === 'x86-32'))
+  return (
+    os === 'win' ||
+    os === 'mac' ||
+    (os === 'linux' && (arch === 'x86-64' || arch === 'x86-32' || arch === 'arm64' || arch === 'aarch64'))
+  )
 }
 
 /**

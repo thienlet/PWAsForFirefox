@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 use std::fmt::Write as FmtWrite;
-use std::fs::{copy, create_dir_all, remove_file, write, File};
+use std::fs::{File, copy, create_dir_all, remove_file, write};
 use std::io::Write as IoWrite;
 use std::path::Path;
 use std::process::Command;
@@ -16,7 +16,7 @@ use web_app_manifest::types::{ImagePurpose, ImageSize};
 
 use crate::components::site::Site;
 use crate::integrations::categories::XDG_CATEGORIES;
-use crate::integrations::utils::{download_icon, normalize_category_name, process_icons};
+use crate::integrations::utils::{download_icon, normalize_category_name, store_icon};
 use crate::integrations::{IntegrationInstallArgs, IntegrationUninstallArgs};
 use crate::utils::sanitize_string;
 
@@ -72,14 +72,14 @@ impl SiteIds {
 /// Obtain and process icons from the icon list.
 ///
 /// All supported icons from the icon list are downloaded and stored to
-/// the correct locations the comply with the Icon Theme Specification.
+/// the correct locations to comply with the Icon Theme Specification.
 ///
 /// All SVG icons are directly stored as `scalable` or `symbolic` icons,
 /// and other supported icons are converted to PNG and then stored.
 ///
 /// The 48x48 icon has to exist as required by the Icon Theme Specification.
-/// In case it is not provided by the icon list, is is obtained using
-/// the [`process_icons`] function.
+/// In case it is not provided by the icon list, it is obtained using
+/// the [`store_icon`] function.
 ///
 /// # Parameters
 ///
@@ -106,7 +106,7 @@ fn store_icons(
         let mut process = || -> Result<()> {
             // Only icons with absolute URLs can be used
             let url: Url = icon.src.clone().try_into().context(CONVERT_ICON_URL_ERROR)?;
-            debug!("Processing icon {}", url);
+            debug!("Processing icon {url}");
 
             // Download icon and get its content type
             let (content, content_type) =
@@ -163,7 +163,7 @@ fn store_icons(
 
         // Process the icon and catch errors
         if let Err(error) = process().context(PROCESS_ICON_ERROR) {
-            error!("{:?}", error);
+            error!("{error:?}");
             warn!("Falling back to the next available icon");
         }
     }
@@ -179,7 +179,7 @@ fn store_icons(
         warn!("No required 48x48 icon is provided");
         warn!("Generating it from other available icons");
         let size = &ImageSize::Fixed(48, 48);
-        return process_icons(icons, name, size, &filename, client);
+        return store_icon(icons, name, size, &filename, client);
     }
 
     Ok(())

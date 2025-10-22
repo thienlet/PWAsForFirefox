@@ -173,14 +173,15 @@ class PwaBrowser {
       }
     }, true);
 
-    // Handle opening with Ctrl+L and Alt+D
-    document.getElementById('Browser:OpenLocation').addEventListener(
-      'command',
-      event => {
-        event.preventDefault();
-        addressInputHandle();
-      }
-    );
+    // Handle opening with Ctrl+L and Alt+D (Browser:OpenLocation)
+    window.openLocation = _ => {
+      addressInputHandle();
+    };
+
+    // Handle opening with Ctrl+K and Ctrl+J/Ctrl+E/Cmd+Opt+F (Tools:Search)
+    SearchUIUtils.webSearch = _ => {
+      addressInputHandle();
+    };
   }
 
   createNotificationAnchor () {
@@ -193,6 +194,11 @@ class PwaBrowser {
   createOpenInBrowserMenuItem () {
     // Remap access key for opening new window to "N"
     document.getElementById('context-openlink').accessKey = 'N';
+
+    // Quick fix to prevent error on Firefox ESR 128
+    // We can remove it when ESR 128 is no longer supported
+    try { let _ = nsContextMenu }
+    catch (error) { return }
 
     // Create context menu item that opens link in a default browser
     const menuItem = this.createElement(document, 'menuitem', { id: 'contextmenu-openlinkdefault', 'data-l10n-id': 'context-menu-open-link-default-browser' });
@@ -427,7 +433,7 @@ class PwaBrowser {
       // Open the default browser and cancel the request for out-of-scope URLs
       if (checkOutOfScope(httpChannel.URI, chromeWindow)) {
         MailIntegration._launchExternalUrl(httpChannel.URI);
-        httpChannel.cancel(418);
+        httpChannel.cancel(Cr.NS_BINDING_ABORTED);
       }
     }, 'http-on-modify-request', false);
 
@@ -505,7 +511,9 @@ class PwaBrowser {
 
     // Hide tabs/icon bar on launch if it should be hidden by default
     // Also prevent un-collapsing of tabs/icon bar by some Firefox function
-    let shownByDefault = Services.xulStore.getValue(window.document.documentURI, iconBar.id, 'collapsed') !== 'true';
+    const collapsedSet = Services.xulStore.hasValue(window.document.documentURI, iconBar.id, 'collapsed');
+    const collapsedValue = Services.xulStore.getValue(window.document.documentURI, iconBar.id, 'collapsed');
+    let shownByDefault = !collapsedSet || !(collapsedValue === 'true' || collapsedValue === '');
     if (!shownByDefault) {
       window.TabBarVisibility.update = function () {}
       titleBar?.setAttribute('autohide', 'true');
@@ -1846,6 +1854,7 @@ class PwaBrowser {
     xPref.set('browser.uidensity', 1, true);
     xPref.set('browser.link.open_newwindow', 1, true);
     xPref.set('datareporting.policy.firstRunURL', '', true);
+    xPref.set('termsofuse.bypassNotification', true, true);
 
     // Prevent syncing preferences that are commonly set to different values in web apps
     // In the future, we could try to implement a different syncing "channel" just for web apps

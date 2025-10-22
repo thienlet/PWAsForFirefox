@@ -3,10 +3,10 @@ use std::io::Result as IoResult;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command};
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use cfg_if::cfg_if;
 use configparser::ini::Ini;
-use fs_extra::dir::{copy, CopyOptions};
+use fs_extra::dir::{CopyOptions, copy};
 use log::{info, warn};
 use tempfile::{NamedTempFile, TempDir};
 
@@ -57,7 +57,7 @@ cfg_if! {
         use std::ffi::c_void;
         use std::mem;
 
-        use windows::Win32::Foundation::BOOL;
+        use windows::core::BOOL;
         use windows::Win32::System::JobObjects::{
             IsProcessInJob,
             JobObjectExtendedLimitInformation,
@@ -261,8 +261,10 @@ impl Runtime {
         warn!("Firefox is licensed under the Mozilla Public License 2.0");
         warn!("Firefox is a trademark of the Mozilla Foundation in the U.S. and other countries");
         warn!("This project is not affiliated with the Mozilla Foundation in any way");
-        warn!("By using this project you also agree to the Firefox Privacy Notice: https://www.mozilla.org/privacy/firefox/");
-        warn!("Check the Firefox website for more details: https://www.mozilla.org/firefox/");
+        warn!("By using the runtime you agree to the Firefox Terms of Use and Privacy Notice");
+        warn!("Firefox Terms of Use: https://www.mozilla.org/about/legal/terms/firefox/");
+        warn!("Firefox Privacy Notice: https://www.mozilla.org/privacy/firefox/");
+        warn!("Firefox Website: https://www.mozilla.org/firefox/");
 
         info!("Downloading the runtime archive");
         let mut archive = NamedTempFile::new().context(TEMP_FILE_ERROR)?;
@@ -294,28 +296,13 @@ impl Runtime {
                 source.push("core");
 
             } else if #[cfg(platform_linux)] {
-                use anyhow::bail;
                 use std::fs::File;
-                use std::io::Read;
-                use std::io::Seek;
-                use std::io::SeekFrom;
-                use bzip2::read::BzDecoder;
                 use xz2::read::XzDecoder;
                 use tar::Archive;
 
-                let mut file = File::open(&archive).context(EXTRACT_ERROR)?;
-                let mut buffer = [0; 3];
-                file.read_exact(&mut buffer)?;
-                file.seek(SeekFrom::Start(0))?;
-
-                let compressed: Box<dyn std::io::Read> = match &buffer {
-                    b"\x42\x5A\x68" => Box::new(BzDecoder::new(file)),
-                    b"\xFD\x37\x7A" => Box::new(XzDecoder::new(file)),
-                    _ => bail!("Unsupported compression method"),
-                };
-
-                let mut bundle = Archive::new(compressed);
-                bundle.unpack(&extracted).context(EXTRACT_ERROR)?;
+                let file = File::open(&archive).context(EXTRACT_ERROR)?;
+                let mut compressed = Archive::new(XzDecoder::new(file));
+                compressed.unpack(&extracted).context(EXTRACT_ERROR)?;
 
                 source.push("firefox");
 

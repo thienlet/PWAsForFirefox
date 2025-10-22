@@ -6,17 +6,15 @@ use log::warn;
 use reqwest::blocking::Client;
 use url::Url;
 use web_app_manifest::resources::IconResource;
-use web_app_manifest::types::ImageSize;
-use windows::core::{Interface, Result as WindowsResult, GUID, HSTRING, PCWSTR};
 use windows::Win32::Storage::EnhancedStorage::{PKEY_AppUserModel_ID, PKEY_Title};
 use windows::Win32::System::Com::StructuredStorage::InitPropVariantFromStringVector;
 use windows::Win32::System::Com::{
-    CoCreateInstance,
-    CoInitializeEx,
-    IPersistFile,
     CLSCTX_ALL,
     COINIT_DISABLE_OLE1DDE,
     COINIT_MULTITHREADED,
+    CoCreateInstance,
+    CoInitializeEx,
+    IPersistFile,
 };
 use windows::Win32::UI::Shell::Common::{IObjectArray, IObjectCollection};
 use windows::Win32::UI::Shell::PropertiesSystem::IPropertyStore;
@@ -28,10 +26,11 @@ use windows::Win32::UI::Shell::{
     ShellLink,
 };
 use windows::Win32::UI::WindowsAndMessaging::SW_SHOWMINNOACTIVE;
-use windows_registry::{Key, CURRENT_USER};
+use windows::core::{GUID, HSTRING, Interface, PCWSTR, Result as WindowsResult};
+use windows_registry::{CURRENT_USER, Key};
 
 use crate::components::site::Site;
-use crate::integrations::utils::{process_icons, sanitize_name};
+use crate::integrations::utils::{sanitize_name, store_multisize_icon};
 use crate::integrations::{IntegrationInstallArgs, IntegrationUninstallArgs};
 use crate::utils::sanitize_string;
 
@@ -86,7 +85,7 @@ impl SiteIds {
 /// the next icons are tried. If no provided icons are working, the icon is generated
 /// from the first letter of the name.
 ///
-/// See [`process_icons`] for more details.
+/// See [`store_multisize_icon`] for more details.
 ///
 /// # Parameters
 ///
@@ -96,10 +95,8 @@ impl SiteIds {
 /// - `client`: An instance of a blocking HTTP client.
 ///
 fn store_icon(name: &str, icons: &[IconResource], path: &Path, client: &Client) -> Result<()> {
-    // Currently only one embedded image per ICO is supported: https://github.com/image-rs/image/issues/884
-    // Until more embedded images are supported, use the max ICO size (256x256)
-    let size = &ImageSize::Fixed(256, 256);
-    process_icons(icons, name, size, path, client)
+    let sizes = [16, 24, 32, 48, 64, 128, 256];
+    store_multisize_icon(icons, name, &sizes, path, client)
 }
 
 fn create_arp_entry(
@@ -112,11 +109,11 @@ fn create_arp_entry(
         .create(format!(r"{ADD_REMOVE_PROGRAMS_KEY}\{}", &ids.regid))
         .context("Failed to create registry key")?;
 
-    key.set_string("UninstallString", &format!("{} site uninstall --quiet {}", &exe, &ids.ulid))?;
+    key.set_string("UninstallString", format!("{} site uninstall --quiet {}", &exe, &ids.ulid))?;
     key.set_string("DisplayIcon", icon)?;
     key.set_string("DisplayName", &ids.name)?;
-    key.set_string("Publisher", &args.site.domain())?;
-    key.set_string("URLInfoAbout", &args.site.url())?;
+    key.set_string("Publisher", args.site.domain())?;
+    key.set_string("URLInfoAbout", args.site.url())?;
     key.set_u32("NoModify", 1u32)?;
     key.set_u32("NoRepair", 1u32)?;
     key.set_string("Comments", "Installed using PWAsForFirefox")?;
@@ -143,7 +140,7 @@ fn create_menu_shortcut(
         let old_filename = start_menu_dir.join(old_name).with_extension("lnk");
 
         if let Err(error) = rename(old_filename, &filename).context("Failed to rename shortcut") {
-            warn!("{:?}", error);
+            warn!("{error:?}");
         }
     }
 
@@ -293,7 +290,7 @@ fn register_protocol_handlers(
             .context("Failed to set ApplicationName application key")?;
         key.set_string("ApplicationDescription", &ids.description)
             .context("Failed to set ApplicationDescription application key")?;
-        key.set_string("ApplicationIcon", &format!("{icon},0"))
+        key.set_string("ApplicationIcon", format!("{icon},0"))
             .context("Failed to set ApplicationIcon application key")?;
         key.set_string("AppUserModelID", &ids.appid)
             .context("Failed to set AppUserModelID application key")?;
@@ -325,7 +322,7 @@ fn register_protocol_handlers(
     CURRENT_USER
         .create(format!(r"{classes_path}\Shell\open\command"))
         .context("Failed to create open command registry key")?
-        .set_string("", &format!("\"{exe}\" site launch {ulid} --protocol \"%1\""))
+        .set_string("", format!("\"{exe}\" site launch {ulid} --protocol \"%1\""))
         .context("Failed to set open command registry key")?;
 
     // Create URL associations key

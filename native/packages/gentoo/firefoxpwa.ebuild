@@ -14,8 +14,14 @@ HOMEPAGE="https://pwasforfirefox.filips.si/"
 
 SRC_URI="
 	https://github.com/filips123/PWAsForFirefox/archive/v${PV}.tar.gz -> ${P}.tar.gz
-	${CARGO_CRATE_URIS}
 "
+
+if [[ ${PKGBUMPING} != ${PVR} ]]; then
+	SRC_URI+="
+		https://github.com/filips123/PWAsForFirefox/releases/download/v${PV}/firefoxpwa-${PV}-crates.tar.xz
+		${CARGO_CRATE_URIS}
+	"
+fi
 
 S="${WORKDIR}/PWAsForFirefox-${PV}/native"
 
@@ -26,13 +32,12 @@ LICENSE="MPL-2.0"
 LICENSE+=""
 
 SLOT="0"
-KEYWORDS="~amd64 ~arm ~arm64"
+KEYWORDS="~amd64 ~arm64"
 IUSE="custom-cflags lto static"
 
 DEPEND="
 	!static? (
 		app-arch/zstd:=
-		app-arch/bzip2:=
 		app-arch/xz-utils:=
 		dev-libs/openssl:=
 	)
@@ -140,8 +145,7 @@ pkg_postinst() {
 		elog "You have successfully installed the native part of the PWAsForFirefox project."
 		elog "You should also install the Firefox extension if you haven't already."
 		elog
-		elog "Download:"
-		elog "\thttps://addons.mozilla.org/firefox/addon/pwas-for-firefox/"
+		elog "Download: https://addons.mozilla.org/firefox/addon/pwas-for-firefox/"
 	fi
 
 	xdg_pkg_postinst
