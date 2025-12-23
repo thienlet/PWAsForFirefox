@@ -8,9 +8,16 @@ export const PREF_DEFAULT_TAB = 'settings.default-tab'
 export const PREF_LOCALE = 'settings.locale'
 export const PREF_DISABLE_UPDATE_CHECKING = 'settings.disable-update-checking'
 
+export const STORAGE_LICENSE_ACCEPTED = 'storage.license-agreement-accepted'
+export const STORAGE_LAST_UPDATE_CHECK_TIME = 'storage.last-update-check-time'
+export const STORAGE_LAST_UPDATE_CHECK_VERSION = 'storage.last-update-check-version'
+
 export const AUTO_LAUNCH_PERMISSIONS = { permissions: ['webNavigation', 'webRequest', 'webRequestBlocking'] }
 
 export const EVENT_LOCALIZATION_READY = 'localizationReady'
+
+const UPDATE_CHECK_INTERVAL = 8 * 60 * 60 * 1000
+const UPDATE_CHECK_ID = 'pwas-for-firefox'
 
 /**
  * Obtains the manifest and the document URLs by asking the content script of current tab.
@@ -135,7 +142,7 @@ export async function setConfig (config) {
  * * If `update-major` is returned, versions of extension and native are different and incompatible.
  * * If `update-minor` is returned, versions of extension and native are different but compatible.
  *
- * @returns {Promise<"ok"|"install"|"update-major"|"update-minor">}
+ * @returns {Promise<{status: "ok"|"install"|"update-major"|"update-minor", extension?: string, native?: string}>}
  */
 export async function checkNativeStatus () {
   try {
@@ -145,27 +152,62 @@ export async function checkNativeStatus () {
     if (response.type !== 'SystemVersions') throw new Error(`Received invalid response type: ${response.type}`)
 
     // Runtime always needs to be installed, we cannot disable that
-    if (!response.data.firefox) return 'install'
+    if (!response.data.firefox) return { status: 'install' }
 
     // We can disable update/version checks with a "secret" setting
-    if ((await browser.storage.local.get(PREF_DISABLE_UPDATE_CHECKING))[PREF_DISABLE_UPDATE_CHECKING] === true) return 'ok'
+    if ((await browser.storage.local.get(PREF_DISABLE_UPDATE_CHECKING))[PREF_DISABLE_UPDATE_CHECKING] === true) return { status: 'ok' }
 
     // Get both extension and native versions
     const versionExtension = browser.runtime.getManifest().version
     const versionNative = response.data.firefoxpwa
 
     // If versions are the same, everything is fine
-    if (versionExtension === versionNative) return 'ok'
+    if (versionExtension === versionNative) return { status: 'ok' }
 
     // Check if versions are compatible (have the same major component)
     const majorExtension = versionExtension.split('.', 1)[0]
     const majorNative = versionNative.split('.', 1)[0]
-    return majorExtension === majorNative ? 'update-minor' : 'update-major'
+    const status = majorExtension === majorNative ? 'update-minor' : 'update-major'
+    return { status, extension: versionExtension, native: versionNative }
   } catch (error) {
-    if (error.message === 'Attempt to postMessage on disconnected port') return 'install'
-    if (error.message === 'No such native application firefoxpwa') return 'install'
+    if (error.message === 'Attempt to postMessage on disconnected port') return { status: 'install' }
+    if (error.message === 'No such native application firefoxpwa') return { status: 'install' }
     throw error
   }
+}
+
+/**
+ * Gets the latest released extension version from AMO.
+ *
+ * @returns {Promise<string|null>}
+ */
+export async function getLatestAmoVersion () {
+  const {
+    [STORAGE_LAST_UPDATE_CHECK_TIME]: lastTime,
+    [STORAGE_LAST_UPDATE_CHECK_VERSION]: lastVersion
+  } = await browser.storage.local.get([
+    STORAGE_LAST_UPDATE_CHECK_TIME,
+    STORAGE_LAST_UPDATE_CHECK_VERSION
+  ])
+
+  if (lastTime && lastVersion && (Date.now() - lastTime) < UPDATE_CHECK_INTERVAL) return lastVersion
+
+  try {
+    const response = await fetch(`https://addons.mozilla.org/api/v5/addons/addon/${UPDATE_CHECK_ID}/`)
+    const version = (await response.json())?.current_version?.version
+    if (version) {
+      await browser.storage.local.set({
+        [STORAGE_LAST_UPDATE_CHECK_TIME]: Date.now(),
+        [STORAGE_LAST_UPDATE_CHECK_VERSION]: version
+      })
+      return version
+    }
+  } catch (error) {
+    console.error('Failed to get latest AMO version')
+    console.error(error)
+  }
+
+  return lastVersion || null
 }
 
 /**

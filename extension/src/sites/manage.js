@@ -6,6 +6,7 @@ import Offcanvas from 'bootstrap/js/src/offcanvas'
 import Tab from 'bootstrap/js/src/tab'
 import Toast from 'bootstrap/js/src/toast'
 import Tags from 'bootstrap5-tags/tags'
+import semverCompare from 'semver/functions/compare'
 
 import {
   AUTO_LAUNCH_PERMISSIONS,
@@ -13,6 +14,7 @@ import {
   checkNativeStatus,
   getConfig,
   getIcon,
+  getLatestAmoVersion,
   isAutoRuntimeInstallSupported,
   isProtocolSchemePermitted,
   launchSite,
@@ -35,20 +37,82 @@ import { knownCategories } from './categories'
 
 // Display install/update page when clicked on browser action and the native program is not correctly installed
 async function handleNativeStatus () {
-  switch (await checkNativeStatus()) {
+  const nativeStatus = await checkNativeStatus()
+  switch (nativeStatus.status) {
     case 'install':
       await browser.tabs.create({ url: browser.runtime.getURL('setup/install.html') })
       window.close()
       break
     case 'update-major':
-      await browser.tabs.create({ url: browser.runtime.getURL('setup/update.html') })
-      window.close()
-      break
     case 'update-minor': {
-      const outdatedBox = document.getElementById('extension-outdated-box')
-      document.getElementById('extension-outdated-update').setAttribute('href', browser.runtime.getURL('setup/update.html'))
-      document.getElementById('extension-outdated-close').addEventListener('click', () => outdatedBox.classList.add('d-none'))
-      outdatedBox.classList.remove('d-none')
+      const comparedVersions = semverCompare(nativeStatus.extension, nativeStatus.native)
+
+      const outdatedBox = document.getElementById('outdated-box')
+      const outdatedBoxNotice = document.getElementById('outdated-box-notice')
+      const outdatedBoxPending = document.getElementById('outdated-box-pending')
+      const outdatedBoxIncompatible = document.getElementById('outdated-box-incompatible')
+      const outdatedBoxLink = document.getElementById('outdated-box-link')
+      const outdatedBoxClose = document.getElementById('outdated-box-close')
+
+      let displayNotice = false
+
+      // Native program is outdated
+      if (comparedVersions > 0) {
+        // Display notice for outdated native program
+        outdatedBoxNotice.innerText = await getMessage('managePageFooterOutdatedNative')
+        outdatedBoxLink.innerText = await getMessage('managePageFooterOutdatedNativeUpdate')
+
+        // We assume the native program is always available
+        outdatedBoxPending.classList.add('d-none')
+        outdatedBoxLink.classList.remove('d-none')
+
+        // Always display the notice for outdated native program
+        displayNotice = true
+      }
+
+      // Extension is outdated
+      if (comparedVersions < 0) {
+        // Display notice for outdated extension
+        outdatedBoxNotice.innerText = await getMessage('managePageFooterOutdatedExtension')
+        outdatedBoxLink.innerText = await getMessage('managePageFooterOutdatedExtensionUpdate')
+
+        // Check the latest available extension version
+        const latestExtension = await getLatestAmoVersion()
+
+        if (!latestExtension || semverCompare(nativeStatus.native, latestExtension) <= 0) {
+          // The latest version is available
+          outdatedBoxPending.classList.add('d-none')
+          outdatedBoxLink.classList.remove('d-none')
+
+          // Always display the notice for outdated extension with update available
+          displayNotice = true
+        } else {
+          // The latest version is not yet available
+          outdatedBoxPending.classList.remove('d-none')
+          outdatedBoxLink.classList.add('d-none')
+
+          // Do not display the notice for outdated extension without update available
+          displayNotice = false
+        }
+      }
+
+      // Always display incompatible notice if major versions mismatch
+      if (nativeStatus.status === 'update-major') {
+        outdatedBoxIncompatible.classList.remove('d-none')
+        displayNotice = true
+      } else {
+        outdatedBoxIncompatible.classList.add('d-none')
+      }
+
+      // Open the update page on link click
+      outdatedBoxLink.setAttribute('href', browser.runtime.getURL('setup/update.html'))
+
+      // Close the notice on close click
+      outdatedBoxClose.addEventListener('click', () => outdatedBox.classList.add('d-none'))
+
+      // Display the notice if necessary
+      if (displayNotice) outdatedBox.classList.remove('d-none')
+      else outdatedBox.classList.add('d-none')
     }
       break
   }

@@ -415,13 +415,13 @@
     "message": "关于此项目",
     "description": "The button in settings to display project info"
   },
-  "managePageFooterOutdated1": {
-    "message": "扩展已经过期！",
-    "description": "The first part of the extension outdated warning"
+  "managePageFooterOutdatedExtension": {
+    "message": "扩展已经过期。",
+    "description": "The warning in the popup footer saying the extension is outdated"
   },
-  "managePageFooterOutdated2": {
+  "managePageFooterOutdatedExtensionUpdate": {
     "message": "请更新！",
-    "description": "The second part of the extension outdated warning"
+    "description": "The link telling users to update the extension"
   },
   "managePageFooterSearchPlaceholder": {
     "message": "按名称搜索",

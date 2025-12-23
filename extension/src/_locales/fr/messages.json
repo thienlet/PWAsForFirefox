@@ -403,13 +403,13 @@
     "message": "À propos du projet",
     "description": "The button in settings to display project info"
   },
-  "managePageFooterOutdated1": {
-    "message": "L'extension est obsolète !",
-    "description": "The first part of the extension outdated warning"
+  "managePageFooterOutdatedExtension": {
+    "message": "L'extension est obsolète.",
+    "description": "The warning in the popup footer saying the extension is outdated"
   },
-  "managePageFooterOutdated2": {
+  "managePageFooterOutdatedExtensionUpdate": {
     "message": "Veuillez la mettre à jour !",
-    "description": "The second part of the extension outdated warning"
+    "description": "The link telling users to update the extension"
   },
   "managePageFooterSearchPlaceholder": {
     "message": "Recherche par nom",
