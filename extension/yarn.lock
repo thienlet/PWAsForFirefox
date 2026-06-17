@@ -1299,9 +1299,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@parcel/utils@npm:2.16.4":
+"@parcel/utils@filips123/parcel#head=fix-glob-order-dist&workspace=@parcel/utils":
   version: 2.16.4
-  resolution: "@parcel/utils@npm:2.16.4"
+  resolution: "@parcel/utils@https://github.com/filips123/parcel.git#workspace=%40parcel%2Futils&commit=677b6ecfb4c980a400ccedad5d66772232f50046"
   dependencies:
     "@parcel/codeframe": "npm:2.16.4"
     "@parcel/diagnostic": "npm:2.16.4"
@@ -1311,7 +1311,7 @@ __metadata:
     "@parcel/source-map": "npm:^2.1.1"
     chalk: "npm:^4.1.2"
     nullthrows: "npm:^1.1.1"
-  checksum: 10c0/bd357ec36a0a08a4a539640992c300de29c97107901e3ace0c809d4ccc324651f0b5b7a40da7637d4147fa22f4ff36ed424d7f1cd77b0796573b7d59614d0b60
+  checksum: 10c0/a501ba283f8318c067d4be2fe23edfa7e90a99ac2f3579e8635429316c729b2e4047903b50aa407e655a6b70ea1ea445c4dfc6df5529158014c0f54c09ed0b13
   languageName: node
   linkType: hard
 
