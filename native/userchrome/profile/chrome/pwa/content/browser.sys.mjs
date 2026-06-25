@@ -488,12 +488,17 @@ class PwaBrowser {
 
   handleHiddenExtensionsButton () {
     if (!document.getElementById('unified-extensions-button')) {
+      // Assign extensions widget to the menu button
       window.gUnifiedExtensions._button = document.getElementById('PanelUI-menu-button');
       window.gUnifiedExtensions._initialized = true;
 
       window.gUnifiedExtensions.getPopupAnchorID = function (browser, window) {
         return 'PanelUI-menu-button';
       };
+
+    } else {
+      // Assign extensions widget to our custom button
+      window.gUnifiedExtensions._button = document.getElementById('unified-extensions-button');
     }
   }
 
