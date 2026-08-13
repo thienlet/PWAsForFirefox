@@ -122,22 +122,19 @@ function launchSite (siteConfig, urlList, isStartup) {
   return win;
 }
 
-// Properly disable Firefox Session Restore and Private Window Separation
+// Properly disable session restore and default browser checks
 Services.prefs.getDefaultBranch(null).setBoolPref('browser.sessionstore.resume_from_crash', false);
 Services.prefs.getDefaultBranch(null).setIntPref('browser.sessionstore.max_resumed_crashes', 0);
 Services.prefs.getDefaultBranch(null).setIntPref('browser.sessionstore.max_tabs_undo', 0);
 Services.prefs.getDefaultBranch(null).setIntPref('browser.sessionstore.max_windows_undo', 0);
 Services.prefs.getDefaultBranch(null).setBoolPref('browser.shell.checkDefaultBrowser', false);
 Services.prefs.getDefaultBranch(null).setBoolPref('browser.startup.upgradeDialog.enabled', false);
-Services.prefs.getDefaultBranch(null).setBoolPref('browser.privateWindowSeparation.enabled', false);
-Services.prefs.getDefaultBranch(null).setBoolPref('browser.privacySegmentation.createdShortcut', true);
 
 // Force disable vertical tabs until we figure out how to properly support them (#667)
 Services.prefs.setBoolPref('sidebar.verticalTabs', false);
 Services.prefs.setBoolPref('sidebar.revamp', false);
 
 // Disable Firefox Nova redesign until we add a proper support for it
-Services.prefs.getDefaultBranch(null).setBoolPref('browser.settings-redesign.enabled', false);
 Services.prefs.getDefaultBranch(null).setBoolPref('browser.nova.enabled', false);
 
 // Disable unified trust panel until with make it work with custom widgets
@@ -153,6 +150,26 @@ OnboardingMessageProvider.getUntranslatedMessages = async () => [];
 // Disable onboarding messages in preferences
 Services.prefs.getDefaultBranch(null).setStringPref('browser.newtabpage.activity-stream.asrouter.providers.onboarding', '{"id":"onboarding","enabled":false}');
 Services.prefs.getDefaultBranch(null).setStringPref('browser.newtabpage.activity-stream.asrouter.providers.cfr', '{"id":"cfr","enabled":false}');
+
+// Disable private window separation
+Services.prefs.getDefaultBranch(null).setBoolPref('browser.privateWindowSeparation.enabled', false);
+Services.prefs.getDefaultBranch(null).setBoolPref('browser.privacySegmentation.createdShortcut', true);
+
+// Disable built-in support for launch on login
+Services.prefs.getDefaultBranch(null).setBoolPref('browser.startup.windowsLaunchOnLogin.enabled', false);
+Services.prefs.getDefaultBranch(null).setBoolPref('browser.startup.windowsLaunchOnLogin.alreadyApplied', true);
+Services.prefs.getDefaultBranch(null).setBoolPref('browser.startup.windowsLaunchOnLogin.disableLaunchOnLoginPrompt', true);
+
+// Disable built-in support for custom icons
+Services.prefs.getDefaultBranch(null).setBoolPref('browser.shell.customIcon.enabled', false);
+try {
+  const { CustomIconManager } = ChromeUtils.importESModule('moz-src:///browser/components/shell/CustomIconManager.sys.mjs');
+  Object.defineProperty(CustomIconManager, 'supported', { get: () => false });
+  CustomIconManager.ensureAppliedOrRevert = async () => null;
+  CustomIconManager.ensureShortcutInPerUserStartMenu = async () => null;
+} catch (error) {
+  // Ignore if CustomIconManager is not available in this Firefox version
+}
 
 // Override command line helper to intercept PWAsForFirefox arguments and start loading the site
 nsDefaultCommandLineHandler.prototype._handle = nsDefaultCommandLineHandler.prototype.handle;
