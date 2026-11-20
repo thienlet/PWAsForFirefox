@@ -26,6 +26,9 @@ toolbar-button-tracking-protection =
 toolbar-button-identity =
     .label = Информация сайта
     .tooltiptext = Просмотр информации об этом сайте
+toolbar-button-trust =
+    .label = Информация сайта
+    .tooltiptext = Просмотр информации об этом сайте
 toolbar-button-permissions =
     .label = Разрешения сайта
     .tooltiptext = Просмотр разрешений, предоставленных этому сайту
@@ -42,8 +45,8 @@ toolbar-button-home-ffpwa =
 ## Internal messages that should not be translated
 
 toolbar-button-back-ffpwa =
-    .label = { main-context-menu-back-2.aria-label }
-    .tooltiptext = { main-context-menu-back-2.tooltiptext }
+    .label = { main-context-menu-back-3.aria-label }
+    .tooltiptext = { main-context-menu-back-3.tooltiptext }
 toolbar-button-forward-ffpwa =
-    .label = { main-context-menu-forward-2.aria-label }
-    .tooltiptext = { main-context-menu-forward-2.tooltiptext }
+    .label = { main-context-menu-forward-3.aria-label }
+    .tooltiptext = { main-context-menu-forward-3.tooltiptext }

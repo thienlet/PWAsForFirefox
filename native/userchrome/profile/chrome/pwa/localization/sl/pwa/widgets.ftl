@@ -26,6 +26,9 @@ toolbar-button-tracking-protection =
 toolbar-button-identity =
     .label = Informacije o strani
     .tooltiptext = Prikaži informacije o tej strani
+toolbar-button-trust =
+    .label = Informacije o strani
+    .tooltiptext = Prikaži informacije o tej strani
 toolbar-button-permissions =
     .label = Dovoljenja strani
     .tooltiptext = Prikaži dovoljenja, dodeljena tej strani
@@ -42,8 +45,8 @@ toolbar-button-home-ffpwa =
 ## Internal messages that should not be translated
 
 toolbar-button-back-ffpwa =
-    .label = { main-context-menu-back-2.aria-label }
-    .tooltiptext = { main-context-menu-back-2.tooltiptext }
+    .label = { main-context-menu-back-3.aria-label }
+    .tooltiptext = { main-context-menu-back-3.tooltiptext }
 toolbar-button-forward-ffpwa =
-    .label = { main-context-menu-forward-2.aria-label }
-    .tooltiptext = { main-context-menu-forward-2.tooltiptext }
+    .label = { main-context-menu-forward-3.aria-label }
+    .tooltiptext = { main-context-menu-forward-3.tooltiptext }
